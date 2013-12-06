@@ -1,0 +1,7 @@
+language: node_js
+script: ./bin/travis.sh
+node_js:
+- '0.10'
+- '0.11'
+services:
+- amqp
