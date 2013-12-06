@@ -2,11 +2,21 @@ var net = require('net');
 
 function ProxyServer(targetPort, targetHost) {
   this.target = { port: targetPort, host: targetHost };
-  this.server = null;
   this.connections = [];
 }
 
 ProxyServer.prototype = {
+  /**
+  @type net.Server
+  */
+  server: null,
+
+  /**
+  Port where server is bound. Is null until the server is bound to a port.
+
+  @type Number
+  */
+  port: null,
 
   onConnect: function(source) {
     var closeConnection = function(socket) {
@@ -29,7 +39,6 @@ ProxyServer.prototype = {
     var connection = {
       endPending: false,
       opened: false,
-      buffers: [],
       source: source,
       destination: destination
     };
@@ -45,15 +54,10 @@ ProxyServer.prototype = {
       connection.endPending = true;
     }
 
+    source.pipe(destination);
+
     // FIN packet
     source.once('end', sourceEnd);
-
-    function bufferSource(buffer) {
-      connection.buffers.push(buffer);
-    }
-
-    // push all data from source into the temp buffer
-    source.on('data', bufferSource);
 
     destination.once('connect', function() {
       if (connection.endPending) return closeConnection(destination);
@@ -66,27 +70,25 @@ ProxyServer.prototype = {
         source.removeListener('end', sourceEnd);
         closeConnection(source);
       });
-
-      // destination is ready to write to
-      source.removeListener('data', bufferSource);
-
-      // write out the pending buffers
-      connection.buffers.forEach(destination.write, destination);
-      connection.buffers = null;
-
-      // proxy all further writes directly
-      source.on('data', destination.write.bind(destination));
     });
   },
 
-  listen: function(port) {
+  onListening: function() {
+    var addr = this.server.address();
+    this.port = addr.port;
+  },
+
+  listen: function(port, callback) {
     if (this.server) {
       throw new Error('only one server can be running per proxy server');
     }
 
     this.server = net.createServer();
-    this.server.listen(port);
+    this.server.listen(port, this.onListening.bind(this));
     this.server.on('connection', this.onConnect.bind(this));
+
+    // mimic normal net.Server.listen call.
+    if (callback) this.server.once('listening', callback);
 
     return this.server;
   },

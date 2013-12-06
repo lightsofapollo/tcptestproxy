@@ -23,16 +23,11 @@ suite('proxy server', function() {
   });
 
   /** Source port configuration */
+  var proxy;
 
-  var sourcePort,
-      proxy;
   setup(function(done) {
     proxy = new ProxyServer(fakePort);
-    proxy.listen(0).once('listening', function() {
-      var addr = proxy.server.address();
-      sourcePort = addr.port;
-      done();
-    });
+    proxy.listen(0, done);
   });
 
   test('end to end connect', function(done) {
@@ -41,14 +36,14 @@ suite('proxy server', function() {
       if (--pending === 0) done();
     }
 
-    net.connect(sourcePort, null, complete);
+    net.connect(proxy.port, null, complete);
     fakeServer.once('connection', complete);
   });
 
   suite('data mirroring', function() {
     var source;
     setup(function() {
-      source = net.connect(sourcePort);
+      source = net.connect(proxy.port);
     });
 
     teardown(function() {
