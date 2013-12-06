@@ -62,7 +62,7 @@ suite('proxy server', function() {
       });
     });
 
-    test('mirror bytes', function(done) {
+    test('mirror bytes source -> dest', function(done) {
       var buffer = new Buffer('123');
 
       fakeServer.once('connection', function(socket) {
@@ -73,6 +73,19 @@ suite('proxy server', function() {
       });
 
       source.write(buffer);
+    });
+
+    test('mirror bytes dest -> source', function(done) {
+      var buffer = new Buffer('123');
+
+      fakeServer.once('connection', function(socket) {
+        socket.write(buffer);
+      });
+
+      source.once('data', function(content) {
+        assert.equal(content.toString(), buffer.toString());
+        done();
+      });
     });
 
     test('source closes', function(done) {

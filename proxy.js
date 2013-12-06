@@ -54,7 +54,10 @@ ProxyServer.prototype = {
       connection.endPending = true;
     }
 
+    // map writes from source to dest
     source.pipe(destination);
+    // and from dest to source
+    destination.pipe(source);
 
     // FIN packet
     source.once('end', sourceEnd);
