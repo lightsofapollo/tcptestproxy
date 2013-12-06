@@ -1,4 +1,5 @@
 var net = require('net');
+var debug = require('debug')('tcpproxytest');
 
 function ProxyServer(targetPort, targetHost) {
   this.target = { port: targetPort, host: targetHost };
@@ -19,6 +20,8 @@ ProxyServer.prototype = {
   port: null,
 
   onConnect: function(source) {
+    debug('inbound connection!', source.address());
+
     var closeConnection = function(socket) {
       if (connection) {
         var idx = this.connections.indexOf(connection);
@@ -63,6 +66,7 @@ ProxyServer.prototype = {
     source.once('end', sourceEnd);
 
     destination.once('connect', function() {
+      debug('opened proxy connection to destination', destination.address());
       if (connection.endPending) return closeConnection(destination);
       // "opened" indicates both source and dest are writable.
       connection.opened = true;
@@ -85,6 +89,8 @@ ProxyServer.prototype = {
     if (this.server) {
       throw new Error('only one server can be running per proxy server');
     }
+
+    debug('starting server at port', port, 'for', this.target);
 
     this.server = net.createServer();
     this.server.listen(port, this.onListening.bind(this));
