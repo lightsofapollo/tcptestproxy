@@ -5,7 +5,9 @@ TCP Proxy (only designed to handle testing cases... use at your own risk)
 # Usage
 
 ```js
-var ProxyServer = require('tcptestproxy')
+var ProxyServer = require('tcptestproxy');
+
+// like if you want to proxy amqp for example
 var proxy = new ProxyServer(5672);
 
 proxy.listen(
